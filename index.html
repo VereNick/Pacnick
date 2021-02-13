@@ -3,17 +3,18 @@
 <head>
     <meta charset="utf-8" />
     <title>Gamedev Phaser Workshop - lesson 01: Initialize the framework</title>
-    <style>* { padding: 0; margin: 0; }</style>
+    <style>
+    	*{
+    		margin: 0;
+    		padding: 0;
+    	}
+    </style>
     <script src="JS/phaser.js"></script>
+    <script src="JS/game.js"></script>
 </head>
 <body>
-<script>
-    var game = new Phaser.Game(480, 320, Phaser.CANVAS, null, {
-      preload: preload, create: create, update: update
-    });
-    function preload() {}
-    function create() {}
-    function update() {}
-</script>
+	<div id = "game" style = 'background-color: grey'>
+		
+	</div>
 </body>
 </html>
