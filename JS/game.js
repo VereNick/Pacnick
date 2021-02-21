@@ -9,16 +9,20 @@ class Game extends Phaser.Scene {
     preload() {
         this.load.atlas('pacman', 'JS/pacman2.png',
             'JS/pacman.json');
-        // this.load.image('tiles', 'JS/blocks2.png');
-        // this.load.tilemapTiledJSON('pacmap', 'JS/pacmap.json');
+        this.load.image('tiles', 'JS/blocks2.png');
+        this.load.tilemapCSV('map', 'JS/PACMAP.csv');
     }
     create() {
         this.physics.world.setBounds(0, 0, 800, 600);
-        var map = this.make.tilemap({ key: 'pacmap' });
         var spriteBounds = Phaser.Geom.Rectangle.Inflate(
             Phaser.Geom.Rectangle.Clone(this.physics.world.bounds), -100, -100);
+        var map = this.make.tilemap({ key: 'map', tileWidth: 48, tileHeight: 48 });
+        var tileset = map.addTilesetImage('tiles');
+        var layer = map.createLayer(0, tileset, 0, 0);
+        map.setCollisionBetween(54, 83);
         pacman = this.physics.add.sprite(250, 250, 'pacman');
         pacman.setCollideWorldBounds(true);
+        this.physics.add.collider(pacman, layer);
         this.keys_arrows = this.input.keyboard.createCursorKeys();
         this.keys_wasd = this.input.keyboard.addKeys({
             'up': Phaser.Input.Keyboard.KeyCodes.W,
