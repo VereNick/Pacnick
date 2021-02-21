@@ -9,8 +9,8 @@ class Game extends Phaser.Scene {
     preload() {
         this.load.atlas('pacman', 'JS/pacman2.png',
             'JS/pacman.json');
-        this.load.image('tiles', 'JS/blocks2.png');
-        this.load.tilemapTiledJSON('pacmap', 'JS/pacmap.json');
+        // this.load.image('tiles', 'JS/blocks2.png');
+        // this.load.tilemapTiledJSON('pacmap', 'JS/pacmap.json');
     }
     create() {
         this.physics.world.setBounds(0, 0, 800, 600);
