@@ -4,24 +4,24 @@
               "frame": { "x": 35, "y": 16, "w": 32, "h": 32 },
               "rotated": false,
               "trimmed": false,
-              "spriteSourceSize": { "x": 35, "y": 16, "w": 16, "h": 16 },
-              "sourceSize": { "w": 16, "h": 16 },
+              "spriteSourceSize": { "x": 35, "y": 16, "w": 32, "h": 32 },
+              "sourceSize": { "w": 32, "h": 32 },
               "pivot": { "x": 0.5, "y": 0.5 }
           },
           "pacman_0001": {
               "frame": { "x": 67, "y": 16, "w": 32, "h": 32 },
               "rotated": false,
               "trimmed": false,
-              "spriteSourceSize": { "x": 67, "y": 16, "w": 16, "h": 16 },
-              "sourceSize": { "w": 16, "h": 16 },
+              "spriteSourceSize": { "x": 67, "y": 16, "w": 32, "h": 32 },
+              "sourceSize": { "w": 32, "h": 32 },
               "pivot": { "x": 0.5, "y": 0.5 }
           },
           "pacman_0002": {
               "frame": { "x": 99, "y": 16, "w": 32, "h": 32 },
               "rotated": false,
               "trimmed": false,
-              "spriteSourceSize": { "x": 99, "y": 16, "w": 16, "h": 16 },
-              "sourceSize": { "w": 16, "h": 16 },
+              "spriteSourceSize": { "x": 99, "y": 16, "w": 32, "h": 32 },
+              "sourceSize": { "w": 32, "h": 32 },
               "pivot": { "x": 0.5, "y": 0.5 }
           }
       },
@@ -30,7 +30,7 @@
           "version": "1.0",
           "image": "pacman2.png",
           "format": "RGBA",
-          "size": { "w": 16, "h": 16 },
+          "size": { "w": 32, "h": 32 },
           "scale": "1",
           "smartupdate": "$TexturePacker:SmartUpdate:5dfda9c839d3ca51c00faf9458ba1fca:0b0be3727c36efcd76ae8acf6abbf211:81fc68276d1596f8f7ad75d59a9ce9b5$"
       }
