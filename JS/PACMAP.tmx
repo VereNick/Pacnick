@@ -4,7 +4,7 @@
   <export target="PACMAP.csv" format="csv"/>
  </editorsettings>
  <tileset firstgid="1" name="blocks" tilewidth="48" tileheight="48" tilecount="4522" columns="34">
-  <image source="D:/РАБОЧИЙ СТОЛ(РАССОРТИРОВАТЬ)/SfmlTest2/Debug/Images/blocks2.png" trans="ff00ff" width="1632" height="6431"/>
+  <image source="blocks2.tsx" trans="ff00ff" width="1632" height="6431"/>
  </tileset>
  <layer id="1" name="Слой тайлов 1" width="10" height="10">
   <data encoding="csv">

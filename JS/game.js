@@ -1,16 +1,17 @@
 var pacman;
 var current_move_input = new Phaser.Math.Vector2(0, 0);
-var speed = 3;
+var speed = 1;
 var key_queue = Phaser.Input.Keyboard.KeyCodes.BACKSPACE;
 var map;
 var tileset;
 var layer;
-var tilesize = 48;
-var pacsize = tilesize;
+var tilesize = 12;
+var pacsize = 12;
 var prevx;
 var prevy;
-var dir;
-var dir2;
+var graphics;
+var oranges;
+var isanimiplay;
 class Game extends Phaser.Scene {
     constructor() {
         super();
@@ -18,7 +19,7 @@ class Game extends Phaser.Scene {
 
     check(x, y) {
         var tile = layer.getTileAtWorldXY(x, y, true);
-        if (tile != null && tile.index != 0) {
+        if (tile != null && tile.index != 5) {
             return true;
         }
         return false;
@@ -27,9 +28,10 @@ class Game extends Phaser.Scene {
         this.load.atlas('pacman', 'JS/pacman2.png',
             'JS/pacman.json');
         this.load.image('tiles', 'JS/blocks2.png');
-        this.load.tilemapCSV('map', 'JS/PACMAP.csv');
+        this.load.tilemapCSV('map', 'JS/newmap.csv');
     }
     create() {
+        graphics = this.add.graphics({ x: 0, y: 0 });
         this.physics.world.setBounds(0, 0, 800, 600);
         var spriteBounds = Phaser.Geom.Rectangle.Inflate(Phaser.Geom.Rectangle.Clone(this.physics.world.bounds), -100, -100);
 
@@ -38,9 +40,9 @@ class Game extends Phaser.Scene {
         layer = map.createLayer(0, tileset, 0, 0);
         prevx = -100;
         prevy = -100;
-
         pacman = this.physics.add.sprite(tilesize + tilesize / 2, tilesize + tilesize / 2, 'pacman');
-        pacman.setScale(tilesize / 32);
+        pacman.setScale(0.25);
+        oranges = new Map();
         pacman.setCollideWorldBounds(true);
         this.keys_arrows = this.input.keyboard.createCursorKeys();
         this.keys_wasd = this.input.keyboard.addKeys({
@@ -57,9 +59,22 @@ class Game extends Phaser.Scene {
             repeat: -1
         });
         pacman.play('pacman');
+        isanimiplay = 1;
+        for(var x = 0; x < map.width; x++){
+            oranges[x] = new Map();
+        }
+        for(var y = 0; y < map.height; y++){
+            for(var x = 0; x < map.width; x++){
+                if(map.getTileAt(x, y) == null){
+                    oranges[x][y] = 1;
+                }
+                else{
+                    oranges[x][y] = 0;
+                }
+            }
+        }
     }
     update() {
-
         if (this.keys_arrows.up.isDown || this.keys_wasd.up.isDown) {
             key_queue = Phaser.Input.Keyboard.KeyCodes.W;
         } else if (this.keys_arrows.down.isDown || this.keys_wasd.down.isDown) {
@@ -85,15 +100,7 @@ class Game extends Phaser.Scene {
         }
         // console.log(margx + " " + margy + " " + pacman.angle);
         if (key_queue != Phaser.Input.Keyboard.KeyCodes.BACKSPACE) {
-            dir = 0;
-            dir2 = 0;
-            if (pacman.angle == 90) dir = 1;
-            else if (pacman.angle == -90) dir = 3;
-            else dir = 2;
-            if (key_queue == Phaser.Input.Keyboard.KeyCodes.W) dir2 = 1;
-            else if (key_queue == Phaser.Input.Keyboard.KeyCodes.S) dir2 = 3;
-            else dir2 = 2;
-            if (((pacman.x - pacsize / 2) % tilesize == 0 && (pacman.y - pacsize / 2) % tilesize == 0) || dir % 2 == dir2 % 2) {
+            if ((pacman.x - pacsize / 2) % tilesize == 0 && (pacman.y - pacsize / 2) % tilesize == 0) {
                 if (key_queue == Phaser.Input.Keyboard.KeyCodes.W && this.check(pacman.x, pacman.y - tilesize)) {
                     current_move_input = new Phaser.Math.Vector2(0, 0);
                     current_move_input.y = -1 * speed;
@@ -146,7 +153,7 @@ class Game extends Phaser.Scene {
                     pacman.y - pacsize / 2 + 1, true);
             }
             if (tile1 != null && tile2 != null && tile3 != null &&
-                tile1.index != 0 && tile2.index != 0 && tile3.index != 0) {
+                tile1.index != 5 && tile2.index != 5 && tile3.index != 5) {
                 pacman.x += current_move_input.x;
                 pacman.y += current_move_input.y;
                 break;
@@ -172,8 +179,38 @@ class Game extends Phaser.Scene {
             pacman.x = Math.round((pacman.x - pacsize / 2) / tilesize) * tilesize + pacsize / 2;
             pacman.y = Math.round((pacman.y - pacsize / 2) / tilesize) * tilesize + pacsize / 2;
         }
+        var pacx = Math.round((pacman.x - pacsize / 2) / tilesize);
+        var pacy = Math.round((pacman.y - pacsize / 2) / tilesize);
+        if(oranges[pacx][pacy] == 1){
+            oranges[pacx][pacy] = 0;
+        }
+        // console.log((pacman.x != prevx || pacman.y != prevy));
+
+        // console.log(pacman.anims.isPlaying);
+
+        if (pacman.x == prevx && pacman.y == prevy) {
+            if(isanimiplay == 1){
+                pacman.stop();
+                pacman.setFrame('pacman_0001');
+                isanimiplay = 0;
+            }
+        }
+        else if (isanimiplay == 0) {
+            pacman.play('pacman');
+            isanimiplay = 1;
+        }
         prevx = pacman.x;
         prevy = pacman.y;
+        graphics.clear();
+        graphics.lineStyle(10, 0xffaa00, 1);
+        for(var x = 0; x < map.width; x++){
+            for(var y = 0; y < map.height; y++){
+                if(oranges[x][y] == 1){
+                    var circle = graphics.strokeCircle(x * tilesize + tilesize / 2, y * tilesize + tilesize / 2, 1);
+                    circle.setDepth(0);
+                }
+            }
+        }
     }
 }
 const config = {
