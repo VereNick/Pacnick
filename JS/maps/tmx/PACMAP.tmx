@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.4" tiledversion="1.4.3" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="48" tileheight="48" infinite="0" nextlayerid="2" nextobjectid="1">
  <editorsettings>
-  <export target="PACMAP.csv" format="csv"/>
+  <export target="../csv/PACMAP.csv" format="csv"/>
  </editorsettings>
  <tileset firstgid="1" name="blocks" tilewidth="48" tileheight="48" tilecount="4522" columns="34">
-  <image source="blocks2.tsx" trans="ff00ff" width="1632" height="6431"/>
+  <image source="../blocks2.tsx" trans="ff00ff" width="1632" height="6431"/>
  </tileset>
  <layer id="1" name="Слой тайлов 1" width="10" height="10">
   <data encoding="csv">
