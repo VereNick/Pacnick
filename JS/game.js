@@ -326,7 +326,6 @@ class Game extends Phaser.Scene {
           margy = 0;
           key_queue = Phaser.Input.Keyboard.KeyCodes.BACKSPACE;
         }
-        /// 31 32 33
       }
     }
     while (true) {
