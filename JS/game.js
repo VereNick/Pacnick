@@ -184,7 +184,7 @@ class Game extends Phaser.Scene {
     );
     this.anims.create({
       key: "pacman",
-      duration: 300,
+      duration: 200,
       frames: this.anims.generateFrameNames("pacman", {
         prefix: "pacman_",
         end: 2,
@@ -193,17 +193,47 @@ class Game extends Phaser.Scene {
       repeat: -1,
     });
     this.anims.create({
-      key: "blinky",
-      duration: 1000,
+      key: "blinkyright",
+      duration: 200,
       frames: this.anims.generateFrameNames("blinky", {
-        prefix: "blinky_",
-        end: 3,
+        prefix: "blinkyright_",
+        end: 1,
+        zeroPad: 4,
+      }),
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "blinkyleft",
+      duration: 200,
+      frames: this.anims.generateFrameNames("blinky", {
+        prefix: "blinkyleft_",
+        end: 1,
+        zeroPad: 4,
+      }),
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "blinkyup",
+      duration: 400,
+      frames: this.anims.generateFrameNames("blinky", {
+        prefix: "blinkyup_",
+        end: 1,
+        zeroPad: 4,
+      }),
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "blinkydown",
+      duration: 300,
+      frames: this.anims.generateFrameNames("blinky", {
+        prefix: "blinkydown_",
+        end: 1,
         zeroPad: 4,
       }),
       repeat: -1,
     });
     pacman.play("pacman");
-    blinky.play("blinky");
+    blinky.play("blinkyup");
     isanimiplay = 1;
     for (let x = 0; x < map.width; x++) {
       oranges[x] = new Map();
@@ -428,14 +458,20 @@ class Game extends Phaser.Scene {
       }
       if(blinky.x > blinkypath[blinkypath.length - 1][1] * tilesize + tilesize / 2){
         blinky.x--;
+        if(blinky.anims.currentAnim.key != "blinkyleft") blinky.play("blinkyleft");
       }
       else if(blinky.x < blinkypath[blinkypath.length - 1][1] * tilesize + tilesize / 2){
         blinky.x++;
+        if(blinky.anims.currentAnim.key != "blinkyright") blinky.play("blinkyright");
       }
       else if(blinky.y > blinkypath[blinkypath.length - 1][0] * tilesize + tilesize / 2){
         blinky.y--;
+        if(blinky.anims.currentAnim.key != "blinkyup") blinky.play("blinkyup");
       }
-      else blinky.y++;
+      else{
+        blinky.y++;
+        if(blinky.anims.currentAnim.key != "blinkydown") blinky.play("blinkydown");
+      }
     }
     // Go into the pacman cell completely
     // if(blinkypath.length == 1){
