@@ -1,6 +1,7 @@
 let pacman;
 let blinky;
 let pinky;
+let inky;
 let current_move_input = new Phaser.Math.Vector2(0, 0);
 let key_queue = Phaser.Input.Keyboard.KeyCodes.BACKSPACE;
 let map;
@@ -9,19 +10,25 @@ let layer;
 let tilesize = 12;
 let pacsize = tilesize;
 let speed = tilesize / 4;
-let blinky_speed = tilesize / 6;
+let blinky_speed = tilesize / 8;
 let pinky_speed = tilesize / 8;
+let inky_speed = tilesize / 8;
 let prevx;
 let prevy;
 let graphics;
 let oranges;
 let isanimiplay;
+let debug = false;
+let blinkymove = false;
+let pinkymove = false;
+let inkymove = false;
 let mapq = new Array(100);
 for (let i = 0; i < mapq.length; i++) {
   mapq[i] = new Array(100);
 }
 let blinkypath = [];
 let pinkypath = [];
+let inkypath = [];
 function dynamicallyLoadScript(url) {
   let script = document.createElement("script");
   script.src = url;
@@ -41,21 +48,150 @@ class Game extends Phaser.Scene {
   ok(x, y){
     return ((x >= 0) && (y >= 0) && (x < map.height) && (y < map.width) && (mapq[y][x] == 0));
   }
+  
+  inky_update() {
+    let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
+    let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
+    let iny = Math.round((inky.x - tilesize / 2) / tilesize);
+    let inx = Math.round((inky.y - tilesize / 2) / tilesize);
+    let bliy = Math.round((blinky.x - tilesize / 2) / tilesize);
+    let blix = Math.round((blinky.y - tilesize / 2) / tilesize);
+    if(prevx != pacman.x || prevy != pacman.y){
+        if(prevx > pacman.x){
+            if(this.ok(pacx, pacy - 2)){
+                pacy -= 2;
+            }
+        }
+        else if(prevx < pacman.x){
+            if(this.ok(pacx, pacy + 2)){
+                pacy += 2;
+            }
+        }
+        else if(prevy < pacman.y){
+            if(this.ok(pacx + 2, pacy)){
+                pacx += 2;
+            }
+        }
+        else{ // Up
+            if(this.ok(pacx - 2, pacy)){
+                pacx -= 2;
+            }
+        }
+    }
+    pacx += (pacx - blix);
+    pacy += (pacy - bliy);
+
+    let maxx = 1;
+    let maxy = 1;
+    for (let y = 0; y < map.height; y++) {
+        for (let x = 0; x < map.width; x++) {
+            if(mapq[x][y] === 0){
+                if(Math.abs(pacy - x) + Math.abs(pacx - y) < Math.abs(pacy - maxy) + Math.abs(pacx - maxx)){
+                    maxx = y;
+                    maxy = x;
+                }
+            }
+        }
+    }
+    pacx = maxx;
+    pacy = maxy;
+    if(mapq[iny][inx] == 1){
+        inkypath = [];
+        return;
+    }
+    let used = new Array(100);
+    for (let i = 0; i < used.length; i++) {
+        used[i] = new Array(100);
+        for (let j = 0; j < used[i].length; j++) {
+            used[i][j] = 0;
+        }
+    }
+    let wave = new Array(100);
+    for (let i = 0; i < wave.length; i++) {
+        wave[i] = new Array(100);
+        for (let j = 0; j < wave[i].length; j++) {
+            wave[i][j] = 1000000000;
+        }
+    }
+    let q = new Queue();
+    let d = new Queue();
+    q.enqueue([inx, iny]);
+    d.enqueue(0);
+    used[inx][iny] = 1;
+    wave[inx][iny] = 0;
+    while(q.head != null){
+        let cur = q.dequeue();
+        let dist = d.dequeue();
+        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
+            used[cur[0] + 1][cur[1]] = 1;
+            wave[cur[0] + 1][cur[1]] = dist + 1;
+            q.enqueue([cur[0] + 1, cur[1]]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
+            used[cur[0] - 1][cur[1]] = 1;
+            wave[cur[0] - 1][cur[1]] = dist + 1;
+            q.enqueue([cur[0] - 1, cur[1]]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
+            used[cur[0]][cur[1] + 1] = 1;
+            wave[cur[0]][cur[1] + 1] = dist + 1;
+            q.enqueue([cur[0], cur[1] + 1]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
+            used[cur[0]][cur[1] - 1] = 1;
+            wave[cur[0]][cur[1] - 1] = dist + 1;
+            q.enqueue([cur[0], cur[1] - 1]);
+            d.enqueue(dist + 1);
+        }
+    }
+    if(used[pacx][pacy] == 0){
+        inkypath = [];
+        return;
+    }
+    inkypath = [];
+    inkypath.push([pacx, pacy]);
+    while(!(inx == pacx && iny == pacy)){
+        if((this.ok(pacx + 1, pacy)) && (wave[pacx + 1][pacy] + 1 == wave[pacx][pacy])){
+            pacx++;
+        }
+        else if(this.ok(pacx - 1, pacy) && wave[pacx - 1][pacy] + 1 == wave[pacx][pacy]){
+            pacx--;
+        }
+        else if(this.ok(pacx, pacy + 1) && wave[pacx][pacy + 1] + 1 == wave[pacx][pacy]){
+            pacy++;
+        }
+        else if(this.ok(pacx, pacy - 1) && wave[pacx][pacy - 1] + 1 == wave[pacx][pacy]){
+            pacy--;
+        }
+        inkypath.push([pacx, pacy]);
+    }
+  }
   pinky_update(){
     let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
     let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
     if(prevx != pacman.x || prevy != pacman.y){
-        if(prevx > pacman.x){ // Right
-            if(this.ok(pacx + 4, pacy)) pacx += 4;
+        if(prevx > pacman.x){
+            if(this.ok(pacx, pacy - 4)){
+                pacy -= 4;
+            }
         }
-        else if(prevx < pacman.x){ // Left
-            if(this.ok(pacx - 4, pacy)) pacx -= 4;
+        else if(prevx < pacman.x){
+            if(this.ok(pacx, pacy + 4)){
+                pacy += 4;
+            }
         }
-        else if(prevy < pacman.y){ // Down
-            if(this.ok(pacx, pacy - 4)) pacy -= 4;
+        else if(prevy < pacman.y){
+            if(this.ok(pacx + 4, pacy)){
+                pacx += 4;
+            }
         }
         else{ // Up
-            if(this.ok(pacx, pacy + 4)) pacy += 4;
+            if(this.ok(pacx - 4, pacy)){
+                pacx -= 4;
+            }
         }
     }
     let piny = Math.round((pinky.x - tilesize / 2) / tilesize);
@@ -217,6 +353,7 @@ class Game extends Phaser.Scene {
     this.load.atlas("pacman", "JS/images/pacman2.png", "JS/entities/pacman/pacman.json");
     this.load.atlas("blinky", "JS/images/pacman2.png", "JS/entities/blinky/blinky.json");
     this.load.atlas("pinky", "JS/images/pacman2.png", "JS/entities/pinky/pinky.json");
+    this.load.atlas("inky", "JS/images/pacman2.png", "JS/entities/inky/inky.json");
     this.load.image("tiles", "JS/images/blocks2.png");
     this.load.tilemapCSV("map", "JS/maps/csv/newmap.csv");
     dynamicallyLoadScript("JS/stl.js");
@@ -256,9 +393,15 @@ class Game extends Phaser.Scene {
       tilesize + tilesize / 2,
       "pinky"
     );
+    inky = this.physics.add.sprite(
+      tilesize + tilesize / 2,
+      tilesize + tilesize / 2,
+      "inky"
+    );
     pacman.setScale((pacsize / 32) * 1.1);
     blinky.setScale((pacsize / 13) * 1.2);
     pinky.setScale((pacsize / 13) * 1.2);
+    inky.setScale((pacsize / 13) * 1.2);
     oranges = new Map();
     pacman.setCollideWorldBounds(true);
     this.keys_arrows = this.input.keyboard.createCursorKeys();
@@ -369,9 +512,50 @@ class Game extends Phaser.Scene {
     }),
     repeat: -1,
     });
+    this.anims.create({
+        key: "inkyright",
+        duration: 300,
+        frames: this.anims.generateFrameNames("inky", {
+          prefix: "inkyright_",
+          end: 1,
+          zeroPad: 4,
+        }),
+        repeat: -1,
+    });
+    this.anims.create({
+        key: "inkyleft",
+        duration: 300,
+        frames: this.anims.generateFrameNames("inky", {
+            prefix: "inkyleft_",
+            end: 1,
+            zeroPad: 4,
+        }),
+        repeat: -1,
+    });
+    this.anims.create({
+        key: "inkyup",
+        duration: 300,
+        frames: this.anims.generateFrameNames("inky", {
+            prefix: "inkyup_",
+            end: 1,
+            zeroPad: 4,
+        }),
+        repeat: -1,
+    });
+    this.anims.create({
+        key: "inkydown",
+        duration: 300,
+        frames: this.anims.generateFrameNames("inky", {
+            prefix: "inkydown_",
+            end: 1,
+            zeroPad: 4,
+        }),
+        repeat: -1,
+    });
     pacman.play("pacman");
     blinky.play("blinkyup");
     pinky.play("pinkyup");
+    inky.play("inkyup");
     isanimiplay = 1;
     for (let x = 0; x < map.width; x++) {
       oranges[x] = new Map();
@@ -387,6 +571,11 @@ class Game extends Phaser.Scene {
         }
       }
     }
+    debug = false;
+    blinkymove = true;
+    inkymove = true;
+    // setTimeout("pinkymove = true", 5000);
+    pinkymove = true;
   }
   update() {
     if (this.keys_arrows.up.isDown || this.keys_wasd.up.isDown) {
@@ -398,11 +587,8 @@ class Game extends Phaser.Scene {
     } else if (this.keys_arrows.left.isDown || this.keys_wasd.left.isDown) {
       key_queue = Phaser.Input.Keyboard.KeyCodes.A;
     }
-    else if(this.keys_addit.space.isDown){
-      blinky.y++;
-    }
-    else if(this.keys_addit.c.isDown){
-      blinky.x++;
+    if(Phaser.Input.Keyboard.JustDown(this.keys_addit.c)){
+        debug = !debug;
     }
     let margx = 0;
     let margy = 0;
@@ -556,8 +742,6 @@ class Game extends Phaser.Scene {
       pacman.play("pacman");
       isanimiplay = 1;
     }
-    prevx = pacman.x;
-    prevy = pacman.y;
     graphics.clear();
     graphics.lineStyle(5, 0xffaa00, 1);
     for (let x = 0; x < map.width; x++) {
@@ -573,10 +757,10 @@ class Game extends Phaser.Scene {
       }
     }
     blinky.setDepth(2);
-    this.blinky_update();
+    if(blinkymove){
+        this.blinky_update();
+    }
     if(blinkypath.length > 1){
-        let blinx = blinky.x;
-        let bliny = blinky.y;
         let isgoingx = true;
         /// [1] is x, [0] is y
         // console.log(blinky.y);
@@ -610,11 +794,11 @@ class Game extends Phaser.Scene {
             if(blinky.anims.currentAnim.key != "blinkydown") blinky.play("blinkydown");
         }
     }
-    pinky.setDepth(2);
-    this.pinky_update();
+    pinky.setDepth(4);
+    if(pinkymove){
+        this.pinky_update();
+    }
     if(pinkypath.length > 1){
-        let pinx = pinky.x;
-        let piny = pinky.y;
         let isgoingx = true;
         /// [1] is x, [0] is y
         // console.log(pinky.y);
@@ -648,6 +832,46 @@ class Game extends Phaser.Scene {
             if(pinky.anims.currentAnim.key != "pinkydown") pinky.play("pinkydown");
         }
     }
+    inky.setDepth(4);
+    if(inkymove){
+        this.inky_update();
+    }
+    if(inkypath.length > 1){
+        let isgoingx = true;
+        /// [1] is x, [0] is y
+        // console.log(inky.y);
+        if(inkypath[inkypath.length - 1][0] != inkypath[inkypath.length - 2][0]){
+            isgoingx = false;
+        }
+        if(isgoingx){
+            if(inky.y == inkypath[inkypath.length - 2][0] * tilesize + tilesize / 2){
+                inkypath.pop();
+            }
+        }
+        else{
+            if(inky.x == inkypath[inkypath.length - 2][1] * tilesize + tilesize / 2){
+                inkypath.pop();
+            }
+        }
+        if(inky.x > inkypath[inkypath.length - 1][1] * tilesize + tilesize / 2){
+            inky.x-=inky_speed;
+            if(inky.anims.currentAnim.key != "inkyleft") inky.play("inkyleft");
+        }
+        else if(inky.x < inkypath[inkypath.length - 1][1] * tilesize + tilesize / 2){
+            inky.x+=inky_speed;
+            if(inky.anims.currentAnim.key != "inkyright") inky.play("inkyright");
+        }
+        else if(inky.y > inkypath[inkypath.length - 1][0] * tilesize + tilesize / 2){
+            inky.y-=inky_speed;
+            if(inky.anims.currentAnim.key != "inkyup") inky.play("inkyup");
+        }
+        else{
+            inky.y+=inky_speed;
+            if(inky.anims.currentAnim.key != "inkydown") inky.play("inkydown");
+        }
+    }
+    prevx = pacman.x;
+    prevy = pacman.y;
     // Go into the pacman cell completely
     // if(blinkypath.length == 1){
     //   let bliy = Math.round((pacman.x - tilesize / 2) / tilesize);
@@ -665,16 +889,38 @@ class Game extends Phaser.Scene {
     //     blinky.y--;
     //   }
     // }
-    // Draw blinky path
-    // graphics.lineStyle(5, 0xff0000, 1);
-    // for(let i = 0; i < blinkypath.length; i++){
-    //     let circle = graphics.strokeCircle(
-    //         blinkypath[i][1] * tilesize + tilesize / 2,
-    //         blinkypath[i][0] * tilesize + tilesize / 2,
-    //         0.5
-    //       );
-    //       circle.setDepth(3);
-    // }
+    if(debug){
+        // Draw blinky path
+        graphics.lineStyle(5, 0xff0000, 1);
+        for(let i = 0; i < blinkypath.length; i++){
+            let circle = graphics.strokeCircle(
+                blinkypath[i][1] * tilesize + tilesize / 2,
+                blinkypath[i][0] * tilesize + tilesize / 2,
+                0.5
+            );
+            circle.setDepth(3);
+        }
+        // Draw pinky path
+        graphics.lineStyle(5, 0xffc0cb, 1);
+        for(let i = 0; i < pinkypath.length; i++){
+            let circle = graphics.strokeCircle(
+                pinkypath[i][1] * tilesize + tilesize / 2,
+                pinkypath[i][0] * tilesize + tilesize / 2,
+                0.5
+            );
+            circle.setDepth(3);
+        }
+        // Draw inky path
+        graphics.lineStyle(5, 0x0000ff, 1);
+        for(let i = 0; i < inkypath.length; i++){
+            let circle = graphics.strokeCircle(
+                inkypath[i][1] * tilesize + tilesize / 2,
+                inkypath[i][0] * tilesize + tilesize / 2,
+                0.5
+            );
+            circle.setDepth(3);
+        }
+    }
   }
 }
 const config = {
