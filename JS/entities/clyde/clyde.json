@@ -1,0 +1,77 @@
+{
+    "frames": {
+        "clyderight_0000": {
+            "frame": { "x": 4, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 4, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clyderight_0001": {
+            "frame": { "x": 20, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 32, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clydeleft_0000": {
+            "frame": { "x": 36, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 4, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clydeleft_0001": {
+            "frame": { "x": 52, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 32, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clydeup_0000": {
+            "frame": { "x": 68, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 4, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clydeup_0001": {
+            "frame": { "x": 84, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 32, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clydedown_0000": {
+            "frame": { "x": 100, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 4, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        },
+        "clydedown_0001": {
+            "frame": { "x": 116, "y": 113, "w": 13, "h": 13 },
+            "rotated": false,
+            "trimmed": false,
+            "spriteSourceSize": { "x": 32, "y": 113, "w": 13, "h": 13 },
+            "sourceSize": { "w": 13, "h": 13 },
+            "pivot": { "x": 0.5, "y": 0.5 }
+        }
+    },
+    "meta": {
+        "app": "http://www.codeandweb.com/texturepacker",
+        "version": "1.0",
+        "image": "pacman2.png",
+        "format": "RGBA",
+        "size": { "w": 13, "h": 13 },
+        "scale": "1",
+        "smartupdate": "$TexturePacker:SmartUpdate:5dfda9c839d3ca51c00faf9458ba1fca:0b0be3727c36efcd76ae8acf6abbf211:81fc68276d1596f8f7ad75d59a9ce9b5$"
+    }
+}

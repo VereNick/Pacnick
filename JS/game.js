@@ -2,6 +2,7 @@ let pacman;
 let blinky;
 let pinky;
 let inky;
+let clyde;
 let current_move_input = new Phaser.Math.Vector2(0, 0);
 let key_queue = Phaser.Input.Keyboard.KeyCodes.BACKSPACE;
 let map;
@@ -13,6 +14,7 @@ let speed = tilesize / 4;
 let blinky_speed = tilesize / 8;
 let pinky_speed = tilesize / 8;
 let inky_speed = tilesize / 8;
+let clyde_speed = tilesize / 8;
 let prevx;
 let prevy;
 let graphics;
@@ -22,6 +24,11 @@ let debug = false;
 let blinkymove = false;
 let pinkymove = false;
 let inkymove = false;
+let clydemove = false;
+let clydetime = Date.now();
+let clydedirection = 0;
+let clydetimeswap = 3000;
+
 let mapq = new Array(100);
 for (let i = 0; i < mapq.length; i++) {
   mapq[i] = new Array(100);
@@ -29,6 +36,25 @@ for (let i = 0; i < mapq.length; i++) {
 let blinkypath = [];
 let pinkypath = [];
 let inkypath = [];
+let clydepath = [];
+
+let scatter_clydepath = [
+    [15, 1],
+    [15, 2],
+    [15, 3],
+    [15, 4],
+    [15, 5],
+    [14, 5],
+    [13, 5],
+    [12, 5],
+    [12, 4],
+    [12, 3],
+    [12, 2],
+    [12, 1],
+    [13, 1],
+    [14, 1]
+];
+
 function dynamicallyLoadScript(url) {
   let script = document.createElement("script");
   script.src = url;
@@ -276,8 +302,8 @@ class Game extends Phaser.Scene {
     let bliy = Math.round((blinky.x - tilesize / 2) / tilesize);
     let blix = Math.round((blinky.y - tilesize / 2) / tilesize);
     if(mapq[bliy][blix] == 1){
-      blinkypath = [];
-      return;
+        blinkypath = [];
+        return;
     }
     let used = new Array(100);
     for (let i = 0; i < used.length; i++) {
@@ -349,26 +375,123 @@ class Game extends Phaser.Scene {
         blinkypath.push([pacx, pacy]);
     }
   }
+  clyde_update(){
+    let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
+    let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
+    let clyy = Math.round((clyde.x - tilesize / 2) / tilesize);
+    let clyx = Math.round((clyde.y - tilesize / 2) / tilesize);
+    // direction = 1(to pacman), 2(to corner);
+    if((Math.abs(pacy - clyy) + Math.abs(pacx - clyx) <= 8 && ((clydedirection == 1 && Date.now() - clydetime >= clydetimeswap) || clydedirection == 2)) || (Math.abs(pacy - clyy) + Math.abs(pacx - clyx) > 8 && ((clydedirection == 2 && Date.now() - clydetime >= clydetimeswap) || clydedirection == 1)) != true){
+        clydedirection = 2;
+        if(Date.now() - clydetime >= clydetimeswap) clydetime = Date.now();
+        for(let i = 0; i < scatter_clydepath.length; i++){
+            if(clyx == scatter_clydepath[i][0] && clyy == scatter_clydepath[i][1]){
+                clydepath = [];
+                clydepath.push(scatter_clydepath[(i + 1) % scatter_clydepath.length]);
+                clydepath.push(scatter_clydepath[i]);
+                return;
+            }
+        }
+        pacy = scatter_clydepath[0][1];
+        pacx = scatter_clydepath[0][0];
+    }
+    if(mapq[clyy][clyx] == 1){
+        clydedirection = 0;
+        clydepath = [];
+        return;
+    }
+    if(Math.abs(pacy - clyy) + Math.abs(pacx - clyx) > 8 && ((clydedirection == 2 && Date.now() - clydetime >= clydetimeswap) || clydedirection == 1)){
+        clydedirection = 1;
+        if(Date.now() - clydetime >= clydetimeswap) clydetime = Date.now();
+    }
+    let used = new Array(100);
+    for (let i = 0; i < used.length; i++) {
+        used[i] = new Array(100);
+        for (let j = 0; j < used[i].length; j++) {
+            used[i][j] = 0;
+        }
+    }
+    let wave = new Array(100);
+    for (let i = 0; i < wave.length; i++) {
+        wave[i] = new Array(100);
+        for (let j = 0; j < wave[i].length; j++) {
+            wave[i][j] = 1000000000;
+        }
+    }
+    let q = new Queue();
+    let d = new Queue();
+    q.enqueue([clyx, clyy]);
+    d.enqueue(0);
+    used[clyx][clyy] = 1;
+    wave[clyx][clyy] = 0;
+    while(q.head != null){
+        let cur = q.dequeue();
+        let dist = d.dequeue();
+        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
+            used[cur[0] + 1][cur[1]] = 1;
+            wave[cur[0] + 1][cur[1]] = dist + 1;
+            q.enqueue([cur[0] + 1, cur[1]]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
+            used[cur[0] - 1][cur[1]] = 1;
+            wave[cur[0] - 1][cur[1]] = dist + 1;
+            q.enqueue([cur[0] - 1, cur[1]]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
+            used[cur[0]][cur[1] + 1] = 1;
+            wave[cur[0]][cur[1] + 1] = dist + 1;
+            q.enqueue([cur[0], cur[1] + 1]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
+            used[cur[0]][cur[1] - 1] = 1;
+            wave[cur[0]][cur[1] - 1] = dist + 1;
+            q.enqueue([cur[0], cur[1] - 1]);
+            d.enqueue(dist + 1);
+        }
+    }
+    if(used[pacx][pacy] == 0){
+        clydepath = [];
+        return;
+    }
+    clydepath = [];
+    clydepath.push([pacx, pacy]);
+    while(!(clyx == pacx && clyy == pacy)){
+        if((this.ok(pacx + 1, pacy)) && (wave[pacx + 1][pacy] + 1 == wave[pacx][pacy])){
+            pacx++;
+        }
+        else if(this.ok(pacx - 1, pacy) && wave[pacx - 1][pacy] + 1 == wave[pacx][pacy]){
+            pacx--;
+        }
+        else if(this.ok(pacx, pacy + 1) && wave[pacx][pacy + 1] + 1 == wave[pacx][pacy]){
+            pacy++;
+        }
+        else if(this.ok(pacx, pacy - 1) && wave[pacx][pacy - 1] + 1 == wave[pacx][pacy]){
+            pacy--;
+        }
+        clydepath.push([pacx, pacy]);
+    };
+  }
   preload() {
     this.load.atlas("pacman", "JS/images/pacman2.png", "JS/entities/pacman/pacman.json");
     this.load.atlas("blinky", "JS/images/pacman2.png", "JS/entities/blinky/blinky.json");
     this.load.atlas("pinky", "JS/images/pacman2.png", "JS/entities/pinky/pinky.json");
     this.load.atlas("inky", "JS/images/pacman2.png", "JS/entities/inky/inky.json");
+    this.load.atlas("clyde", "JS/images/pacman2.png", "JS/entities/clyde/clyde.json");
     this.load.image("tiles", "JS/images/blocks2.png");
     this.load.tilemapCSV("map", "JS/maps/csv/newmap.csv");
     dynamicallyLoadScript("JS/stl.js");
-    
-    // console.log(this);
-    // console.log(blin);
   }
   create() {
     graphics = this.add.graphics({ x: 0, y: 0 });
     this.physics.world.setBounds(0, 0, 800, 600);
-    let spriteBounds = Phaser.Geom.Rectangle.Inflate(
-      Phaser.Geom.Rectangle.Clone(this.physics.world.bounds),
-      -100,
-      -100
-    );
+    // let spriteBounds = Phaser.Geom.Rectangle.Inflate(
+    //   Phaser.Geom.Rectangle.Clone(this.physics.world.bounds),
+    //   -100,
+    //   -100
+    // );
     map = this.make.tilemap({
       key: "map",
       tileWidth: tilesize,
@@ -398,10 +521,16 @@ class Game extends Phaser.Scene {
       tilesize + tilesize / 2,
       "inky"
     );
+    clyde = this.physics.add.sprite(
+      tilesize + tilesize / 2,
+      tilesize + tilesize / 2,
+      "clyde"
+    );
     pacman.setScale((pacsize / 32) * 1.1);
     blinky.setScale((pacsize / 13) * 1.2);
     pinky.setScale((pacsize / 13) * 1.2);
     inky.setScale((pacsize / 13) * 1.2);
+    clyde.setScale((pacsize / 13) * 1.2);
     oranges = new Map();
     pacman.setCollideWorldBounds(true);
     this.keys_arrows = this.input.keyboard.createCursorKeys();
@@ -422,140 +551,183 @@ class Game extends Phaser.Scene {
       },
       this
     );
-    this.anims.create({
-      key: "pacman",
-      duration: 200,
-      frames: this.anims.generateFrameNames("pacman", {
-        prefix: "pacman_",
-        end: 2,
-        zeroPad: 4,
-      }),
-      repeat: -1,
-    });
-    this.anims.create({
-        key: "blinkyright",
-        duration: 300,
-        frames: this.anims.generateFrameNames("blinky", {
-            prefix: "blinkyright_",
-            end: 1,
+    {
+        this.anims.create({
+        key: "pacman",
+        duration: 200,
+        frames: this.anims.generateFrameNames("pacman", {
+            prefix: "pacman_",
+            end: 2,
             zeroPad: 4,
         }),
         repeat: -1,
-    });
-    this.anims.create({
-        key: "blinkyleft",
-        duration: 300,
-        frames: this.anims.generateFrameNames("blinky", {
-            prefix: "blinkyleft_",
+        });
+        this.anims.create({
+            key: "blinkyright",
+            duration: 300,
+            frames: this.anims.generateFrameNames("blinky", {
+                prefix: "blinkyright_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "blinkyleft",
+            duration: 300,
+            frames: this.anims.generateFrameNames("blinky", {
+                prefix: "blinkyleft_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "blinkyup",
+            duration: 300,
+            frames: this.anims.generateFrameNames("blinky", {
+                prefix: "blinkyup_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "blinkydown",
+            duration: 300,
+            frames: this.anims.generateFrameNames("blinky", {
+                prefix: "blinkydown_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "pinkyright",
+            duration: 300,
+            frames: this.anims.generateFrameNames("pinky", {
+            prefix: "pinkyright_",
             end: 1,
             zeroPad: 4,
-        }),
-        repeat: -1,
-    });
-    this.anims.create({
-        key: "blinkyup",
-        duration: 300,
-        frames: this.anims.generateFrameNames("blinky", {
-            prefix: "blinkyup_",
-            end: 1,
-            zeroPad: 4,
-        }),
-        repeat: -1,
-    });
-    this.anims.create({
-        key: "blinkydown",
-        duration: 300,
-        frames: this.anims.generateFrameNames("blinky", {
-            prefix: "blinkydown_",
-            end: 1,
-            zeroPad: 4,
-        }),
-        repeat: -1,
-    });
-    this.anims.create({
-        key: "pinkyright",
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+        key: "pinkyleft",
         duration: 300,
         frames: this.anims.generateFrameNames("pinky", {
-          prefix: "pinkyright_",
-          end: 1,
-          zeroPad: 4,
-        }),
-        repeat: -1,
-    });
-    this.anims.create({
-    key: "pinkyleft",
-    duration: 300,
-    frames: this.anims.generateFrameNames("pinky", {
-        prefix: "pinkyleft_",
-        end: 1,
-        zeroPad: 4,
-    }),
-    repeat: -1,
-    });
-    this.anims.create({
-    key: "pinkyup",
-    duration: 300,
-    frames: this.anims.generateFrameNames("pinky", {
-        prefix: "pinkyup_",
-        end: 1,
-        zeroPad: 4,
-    }),
-    repeat: -1,
-    });
-    this.anims.create({
-    key: "pinkydown",
-    duration: 300,
-    frames: this.anims.generateFrameNames("pinky", {
-        prefix: "pinkydown_",
-        end: 1,
-        zeroPad: 4,
-    }),
-    repeat: -1,
-    });
-    this.anims.create({
-        key: "inkyright",
-        duration: 300,
-        frames: this.anims.generateFrameNames("inky", {
-          prefix: "inkyright_",
-          end: 1,
-          zeroPad: 4,
-        }),
-        repeat: -1,
-    });
-    this.anims.create({
-        key: "inkyleft",
-        duration: 300,
-        frames: this.anims.generateFrameNames("inky", {
-            prefix: "inkyleft_",
+            prefix: "pinkyleft_",
             end: 1,
             zeroPad: 4,
         }),
         repeat: -1,
-    });
-    this.anims.create({
-        key: "inkyup",
+        });
+        this.anims.create({
+        key: "pinkyup",
         duration: 300,
-        frames: this.anims.generateFrameNames("inky", {
-            prefix: "inkyup_",
+        frames: this.anims.generateFrameNames("pinky", {
+            prefix: "pinkyup_",
             end: 1,
             zeroPad: 4,
         }),
         repeat: -1,
-    });
-    this.anims.create({
-        key: "inkydown",
+        });
+        this.anims.create({
+        key: "pinkydown",
         duration: 300,
-        frames: this.anims.generateFrameNames("inky", {
-            prefix: "inkydown_",
+        frames: this.anims.generateFrameNames("pinky", {
+            prefix: "pinkydown_",
             end: 1,
             zeroPad: 4,
         }),
         repeat: -1,
-    });
+        });
+        this.anims.create({
+            key: "inkyright",
+            duration: 300,
+            frames: this.anims.generateFrameNames("inky", {
+            prefix: "inkyright_",
+            end: 1,
+            zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "inkyleft",
+            duration: 300,
+            frames: this.anims.generateFrameNames("inky", {
+                prefix: "inkyleft_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "inkyup",
+            duration: 300,
+            frames: this.anims.generateFrameNames("inky", {
+                prefix: "inkyup_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "inkydown",
+            duration: 300,
+            frames: this.anims.generateFrameNames("inky", {
+                prefix: "inkydown_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "clyderight",
+            duration: 300,
+            frames: this.anims.generateFrameNames("clyde", {
+            prefix: "clyderight_",
+            end: 1,
+            zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "clydeleft",
+            duration: 300,
+            frames: this.anims.generateFrameNames("clyde", {
+                prefix: "clydeleft_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "clydeup",
+            duration: 300,
+            frames: this.anims.generateFrameNames("clyde", {
+                prefix: "clydeup_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+        this.anims.create({
+            key: "clydedown",
+            duration: 300,
+            frames: this.anims.generateFrameNames("clyde", {
+                prefix: "clydedown_",
+                end: 1,
+                zeroPad: 4,
+            }),
+            repeat: -1,
+        });
+    } 
     pacman.play("pacman");
     blinky.play("blinkyup");
     pinky.play("pinkyup");
     inky.play("inkyup");
+    clyde.play("clydeup");
     isanimiplay = 1;
     for (let x = 0; x < map.width; x++) {
       oranges[x] = new Map();
@@ -576,6 +748,9 @@ class Game extends Phaser.Scene {
     inkymove = true;
     // setTimeout("pinkymove = true", 5000);
     pinkymove = true;
+    clydemove = true;
+    clydetime = Date.now();
+    clydedirection = 0;
   }
   update() {
     if (this.keys_arrows.up.isDown || this.keys_wasd.up.isDown) {
@@ -794,7 +969,7 @@ class Game extends Phaser.Scene {
             if(blinky.anims.currentAnim.key != "blinkydown") blinky.play("blinkydown");
         }
     }
-    pinky.setDepth(4);
+    pinky.setDepth(3);
     if(pinkymove){
         this.pinky_update();
     }
@@ -870,6 +1045,44 @@ class Game extends Phaser.Scene {
             if(inky.anims.currentAnim.key != "inkydown") inky.play("inkydown");
         }
     }
+    clyde.setDepth(5);
+    if(clydemove){
+        this.clyde_update();
+    }
+    if(clydepath.length > 1){
+        let isgoingx = true;
+        /// [1] is x, [0] is y
+        // console.log(clyde.y);
+        if(clydepath[clydepath.length - 1][0] != clydepath[clydepath.length - 2][0]){
+            isgoingx = false;
+        }
+        if(isgoingx){
+            if(clyde.y == clydepath[clydepath.length - 2][0] * tilesize + tilesize / 2){
+                clydepath.pop();
+            }
+        }
+        else{
+            if(clyde.x == clydepath[clydepath.length - 2][1] * tilesize + tilesize / 2){
+                clydepath.pop();
+            }
+        }
+        if(clyde.x > clydepath[clydepath.length - 1][1] * tilesize + tilesize / 2){
+            clyde.x-=clyde_speed;
+            if(clyde.anims.currentAnim.key != "clydeleft") clyde.play("clydeleft");
+        }
+        else if(clyde.x < clydepath[clydepath.length - 1][1] * tilesize + tilesize / 2){
+            clyde.x+=clyde_speed;
+            if(clyde.anims.currentAnim.key != "clyderight") clyde.play("clyderight");
+        }
+        else if(clyde.y > clydepath[clydepath.length - 1][0] * tilesize + tilesize / 2){
+            clyde.y-=clyde_speed;
+            if(clyde.anims.currentAnim.key != "clydeup") clyde.play("clydeup");
+        }
+        else{
+            clyde.y+=clyde_speed;
+            if(clyde.anims.currentAnim.key != "clydedown") clyde.play("clydedown");
+        }
+    }
     prevx = pacman.x;
     prevy = pacman.y;
     // Go into the pacman cell completely
@@ -920,7 +1133,27 @@ class Game extends Phaser.Scene {
             );
             circle.setDepth(3);
         }
+        graphics.lineStyle(5, 0xeeff00, 1);
+        for(let i = 0; i < clydepath.length; i++){
+            let circle = graphics.strokeCircle(
+                clydepath[i][1] * tilesize + tilesize / 2,
+                clydepath[i][0] * tilesize + tilesize / 2,
+                0.5
+            );
+            circle.setDepth(3);
+        }
     }
+    let paccy = Math.round((pacman.x - pacsize / 2) / tilesize);
+    let paccx = Math.round((pacman.y - pacsize / 2) / tilesize);
+    if(paccy == 57 && paccx == 8 && pacman.angle == 0){
+        paccy = 1;
+        pacman.x = paccy * tilesize + pacsize / 2;
+    }
+    if(paccy == 0 && paccx == 8 && pacman.angle == -180){
+        paccy = 57;
+        pacman.x = paccy * tilesize + pacsize / 2;
+    }
+    // console.log(pacman.angle);
   }
 }
 const config = {
