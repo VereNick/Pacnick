@@ -29,6 +29,8 @@ let clydetime = Date.now();
 let clydedirection = 0;
 let clydetimeswap = 3000;
 
+let scatter = false;
+
 let mapq = new Array(100);
 for (let i = 0; i < mapq.length; i++) {
   mapq[i] = new Array(100);
@@ -54,6 +56,70 @@ let scatter_clydepath = [
     [13, 1],
     [14, 1]
 ];
+let scatter_blinkypath = [
+    [1, 1],
+    [1, 2],
+    [1, 3],
+    [1, 4],
+    [1, 5],
+    [2, 5],
+    [3, 5],
+    [4, 5],
+    [4, 4],
+    [4, 3],
+    [4, 2],
+    [4, 1],
+    [3, 1],
+    [2, 1]
+];
+let scatter_pinkypath = [
+    [15, 56],
+    [15, 55],
+    [15, 54],
+    [15, 53],
+    [15, 52],
+    [14, 52],
+    [13, 52],
+    [12, 52],
+    [12, 53],
+    [12, 54],
+    [12, 55],
+    [12, 56],
+    [13, 56],
+    [14, 56]
+];
+let scatter_inkypath = [
+    [1, 56],
+    [1, 55],
+    [1, 54],
+    [1, 53],
+    [1, 52],
+    [2, 52],
+    [3, 52],
+    [4, 52],
+    [4, 53],
+    [4, 54],
+    [4, 55],
+    [4, 56],
+    [3, 56],
+    [2, 56]
+];
+let spawn_clydepath = [
+    [41, 5],
+    [40, 5]
+];
+let spawn_blinkypath = [
+    [41, 6],
+    [40, 6]
+];
+let spawn_pinkypath = [
+    [41, 7],
+    [40, 7]
+];
+let spawn_inkypath = [
+    [41, 8],
+    [40, 8]
+];
 
 function dynamicallyLoadScript(url) {
   let script = document.createElement("script");
@@ -74,7 +140,83 @@ class Game extends Phaser.Scene {
   ok(x, y){
     return ((x >= 0) && (y >= 0) && (x < map.height) && (y < map.width) && (mapq[y][x] == 0));
   }
-  
+  getpath(fromx, fromy, tox, toy){
+    let resultpath = [];
+    if(mapq[fromy][fromx] == 1){
+        resultpath = [];
+        return resultpath;
+    }
+    let used = new Array(100);
+    for (let i = 0; i < used.length; i++) {
+        used[i] = new Array(100);
+        for (let j = 0; j < used[i].length; j++) {
+            used[i][j] = 0;
+        }
+    }
+    let wave = new Array(100);
+    for (let i = 0; i < wave.length; i++) {
+        wave[i] = new Array(100);
+        for (let j = 0; j < wave[i].length; j++) {
+            wave[i][j] = 1000000000;
+        }
+    }
+    let q = new Queue();
+    let d = new Queue();
+    q.enqueue([fromx, fromy]);
+    d.enqueue(0);
+    used[fromx][fromy] = 1;
+    wave[fromx][fromy] = 0;
+    while(q.head != null){
+        let cur = q.dequeue();
+        let dist = d.dequeue();
+        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
+            used[cur[0] + 1][cur[1]] = 1;
+            wave[cur[0] + 1][cur[1]] = dist + 1;
+            q.enqueue([cur[0] + 1, cur[1]]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
+            used[cur[0] - 1][cur[1]] = 1;
+            wave[cur[0] - 1][cur[1]] = dist + 1;
+            q.enqueue([cur[0] - 1, cur[1]]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
+            used[cur[0]][cur[1] + 1] = 1;
+            wave[cur[0]][cur[1] + 1] = dist + 1;
+            q.enqueue([cur[0], cur[1] + 1]);
+            d.enqueue(dist + 1);
+        }
+        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
+            used[cur[0]][cur[1] - 1] = 1;
+            wave[cur[0]][cur[1] - 1] = dist + 1;
+            q.enqueue([cur[0], cur[1] - 1]);
+            d.enqueue(dist + 1);
+        }
+    }
+    if(used[fromx][fromy] == 0){
+      resultpath = [];
+      return resultpath;
+    }
+    resultpath = [];
+    resultpath.push([fromx, fromy]);
+    while(!(fromx == tox && fromy == toy)){
+        if((this.ok(tox + 1, toy)) && (wave[tox + 1][toy] + 1 == wave[tox][toy])){
+            tox++;
+        }
+        else if(this.ok(tox - 1, toy) && wave[tox - 1][toy] + 1 == wave[tox][toy]){
+            tox--;
+        }
+        else if(this.ok(tox, toy + 1) && wave[tox][toy + 1] + 1 == wave[tox][toy]){
+            toy++;
+        }
+        else if(this.ok(tox, toy - 1) && wave[tox][toy - 1] + 1 == wave[tox][toy]){
+            toy--;
+        }
+        resultpath.push([tox, toy]);
+    }
+    return resultpath;
+  }
   inky_update() {
     let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
     let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
@@ -82,6 +224,18 @@ class Game extends Phaser.Scene {
     let inx = Math.round((inky.y - tilesize / 2) / tilesize);
     let bliy = Math.round((blinky.x - tilesize / 2) / tilesize);
     let blix = Math.round((blinky.y - tilesize / 2) / tilesize);
+    if(scatter){
+        for(let i = 0; i < scatter_inkypath.length; i++){
+            if(inx == scatter_inkypath[i][0] && iny == scatter_inkypath[i][1]){
+                inkypath = [];
+                inkypath.push(scatter_inkypath[(i + 1) % scatter_inkypath.length]);
+                inkypath.push(scatter_inkypath[i]);
+                return;
+            }
+        }
+        pacy = scatter_inkypath[0][1];
+        pacx = scatter_inkypath[0][0];
+    }
     if(prevx != pacman.x || prevy != pacman.y){
         if(prevx > pacman.x){
             if(this.ok(pacx, pacy - 2)){
@@ -198,6 +352,20 @@ class Game extends Phaser.Scene {
   pinky_update(){
     let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
     let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
+    let piny = Math.round((pinky.x - tilesize / 2) / tilesize);
+    let pinx = Math.round((pinky.y - tilesize / 2) / tilesize);
+    if(scatter){
+        for(let i = 0; i < scatter_pinkypath.length; i++){
+            if(pinx == scatter_pinkypath[i][0] && piny == scatter_pinkypath[i][1]){
+                pinkypath = [];
+                pinkypath.push(scatter_pinkypath[(i + 1) % scatter_pinkypath.length]);
+                pinkypath.push(scatter_pinkypath[i]);
+                return;
+            }
+        }
+        pacy = scatter_pinkypath[0][1];
+        pacx = scatter_pinkypath[0][0];
+    }
     if(prevx != pacman.x || prevy != pacman.y){
         if(prevx > pacman.x){
             if(this.ok(pacx, pacy - 4)){
@@ -220,8 +388,6 @@ class Game extends Phaser.Scene {
             }
         }
     }
-    let piny = Math.round((pinky.x - tilesize / 2) / tilesize);
-    let pinx = Math.round((pinky.y - tilesize / 2) / tilesize);
     if(mapq[piny][pinx] == 1){
         pinkypath = [];
         return;
@@ -301,6 +467,18 @@ class Game extends Phaser.Scene {
     let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
     let bliy = Math.round((blinky.x - tilesize / 2) / tilesize);
     let blix = Math.round((blinky.y - tilesize / 2) / tilesize);
+    if(scatter){
+        for(let i = 0; i < scatter_blinkypath.length; i++){
+            if(blix == scatter_blinkypath[i][0] && bliy == scatter_blinkypath[i][1]){
+                blinkypath = [];
+                blinkypath.push(scatter_blinkypath[(i + 1) % scatter_blinkypath.length]);
+                blinkypath.push(scatter_blinkypath[i]);
+                return;
+            }
+        }
+        pacy = scatter_blinkypath[0][1];
+        pacx = scatter_blinkypath[0][0];
+    }
     if(mapq[bliy][blix] == 1){
         blinkypath = [];
         return;
@@ -380,7 +558,18 @@ class Game extends Phaser.Scene {
     let pacx = Math.round((pacman.y - pacsize / 2) / tilesize);
     let clyy = Math.round((clyde.x - tilesize / 2) / tilesize);
     let clyx = Math.round((clyde.y - tilesize / 2) / tilesize);
-    // direction = 1(to pacman), 2(to corner);
+    if(scatter){
+        for(let i = 0; i < scatter_clydepath.length; i++){
+            if(clyx == scatter_clydepath[i][0] && clyy == scatter_clydepath[i][1]){
+                clydepath = [];
+                clydepath.push(scatter_clydepath[(i + 1) % scatter_clydepath.length]);
+                clydepath.push(scatter_clydepath[i]);
+                return;
+            }
+        }
+        pacy = scatter_clydepath[0][1];
+        pacx = scatter_clydepath[0][0];
+    }
     if((Math.abs(pacy - clyy) + Math.abs(pacx - clyx) <= 8 && ((clydedirection == 1 && Date.now() - clydetime >= clydetimeswap) || clydedirection == 2)) || (Math.abs(pacy - clyy) + Math.abs(pacx - clyx) > 8 && ((clydedirection == 2 && Date.now() - clydetime >= clydetimeswap) || clydedirection == 1)) != true){
         clydedirection = 2;
         if(Date.now() - clydetime >= clydetimeswap) clydetime = Date.now();
@@ -507,23 +696,23 @@ class Game extends Phaser.Scene {
       "pacman"
     );
     blinky = this.physics.add.sprite(
-      tilesize + tilesize / 2,
-      tilesize + tilesize / 2,
+      tilesize * spawn_blinkypath[1][0] + tilesize / 2,
+      tilesize * spawn_blinkypath[1][1] + tilesize / 2,
       "blinky"
     );
     pinky = this.physics.add.sprite(
-      tilesize + tilesize / 2,
-      tilesize + tilesize / 2,
+      tilesize * spawn_pinkypath[1][0] + tilesize / 2,
+      tilesize * spawn_pinkypath[1][1] + tilesize / 2,
       "pinky"
     );
     inky = this.physics.add.sprite(
-      tilesize + tilesize / 2,
-      tilesize + tilesize / 2,
+      tilesize * spawn_inkypath[1][0] + tilesize / 2,
+      tilesize * spawn_inkypath[1][1] + tilesize / 2,
       "inky"
     );
     clyde = this.physics.add.sprite(
-      tilesize + tilesize / 2,
-      tilesize + tilesize / 2,
+      tilesize * spawn_clydepath[1][0] + tilesize / 2,
+      tilesize * spawn_clydepath[1][1] + tilesize / 2,
       "clyde"
     );
     pacman.setScale((pacsize / 32) * 1.1);
@@ -732,14 +921,18 @@ class Game extends Phaser.Scene {
     for (let x = 0; x < map.width; x++) {
       oranges[x] = new Map();
     }
+    // console.log(map.getTileAt(42, 5));
     for (let y = 0; y < map.height; y++) {
       for (let x = 0; x < map.width; x++) {
         if (map.getTileAt(x, y) == null) {
           oranges[x][y] = 1;
-          mapq[x][y] = 0;
         } else {
           oranges[x][y] = 0;
-          mapq[x][y] = 1;
+        }
+        if(map.getTileAt(x, y) == null || map.getTileAt(x, y)['index'] == 175 || map.getTileAt(x, y)['index'] == -2){
+            mapq[x][y] = 0;
+        } else{
+            mapq[x][y] = 1;
         }
       }
     }
@@ -751,6 +944,7 @@ class Game extends Phaser.Scene {
     clydemove = true;
     clydetime = Date.now();
     clydedirection = 0;
+    scatter = false;
   }
   update() {
     if (this.keys_arrows.up.isDown || this.keys_wasd.up.isDown) {
@@ -870,7 +1064,10 @@ class Game extends Phaser.Scene {
         tile3 != null &&
         tile1.index != 5 &&
         tile2.index != 5 &&
-        tile3.index != 5
+        tile3.index != 5 &&
+        tile1.index != 175 &&
+        tile2.index != 175 &&
+        tile3.index != 175
       ) {
         pacman.x += current_move_input.x;
         pacman.y += current_move_input.y;
