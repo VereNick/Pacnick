@@ -11,10 +11,10 @@ let layer;
 let tilesize = 12;
 let pacsize = tilesize;
 let speed = tilesize / 4;
-let blinky_speed = tilesize / 8;
-let pinky_speed = tilesize / 8;
-let inky_speed = tilesize / 8;
-let clyde_speed = tilesize / 8;
+let blinky_speed = tilesize / 4;
+let pinky_speed = tilesize / 4;
+let inky_speed = tilesize / 4;
+let clyde_speed = tilesize / 4;
 let prevx;
 let prevy;
 let graphics;
@@ -30,6 +30,12 @@ let clydedirection = 0;
 let clydetimeswap = 3000;
 
 let scatter = false;
+let spawn = {
+    'blinky': false,
+    'pinky': false,
+    'inky': false,
+    'clyde': false
+};
 
 let mapq = new Array(100);
 for (let i = 0; i < mapq.length; i++) {
@@ -194,12 +200,12 @@ class Game extends Phaser.Scene {
             d.enqueue(dist + 1);
         }
     }
-    if(used[fromx][fromy] == 0){
-      resultpath = [];
-      return resultpath;
+    if(used[tox][toy] == 0){
+        resultpath = [];
+        return resultpath;
     }
     resultpath = [];
-    resultpath.push([fromx, fromy]);
+    resultpath.push([tox, toy]);
     while(!(fromx == tox && fromy == toy)){
         if((this.ok(tox + 1, toy)) && (wave[tox + 1][toy] + 1 == wave[tox][toy])){
             tox++;
@@ -224,6 +230,10 @@ class Game extends Phaser.Scene {
     let inx = Math.round((inky.y - tilesize / 2) / tilesize);
     let bliy = Math.round((blinky.x - tilesize / 2) / tilesize);
     let blix = Math.round((blinky.y - tilesize / 2) / tilesize);
+    if(spawn){
+        inkypath = this.getpath(inx, iny, spawn_inkypath[0][1], spawn_inkypath[0][0]);
+        return;
+    }
     if(scatter){
         for(let i = 0; i < scatter_inkypath.length; i++){
             if(inx == scatter_inkypath[i][0] && iny == scatter_inkypath[i][1]){
@@ -275,79 +285,8 @@ class Game extends Phaser.Scene {
     }
     pacx = maxx;
     pacy = maxy;
-    if(mapq[iny][inx] == 1){
-        inkypath = [];
-        return;
-    }
-    let used = new Array(100);
-    for (let i = 0; i < used.length; i++) {
-        used[i] = new Array(100);
-        for (let j = 0; j < used[i].length; j++) {
-            used[i][j] = 0;
-        }
-    }
-    let wave = new Array(100);
-    for (let i = 0; i < wave.length; i++) {
-        wave[i] = new Array(100);
-        for (let j = 0; j < wave[i].length; j++) {
-            wave[i][j] = 1000000000;
-        }
-    }
-    let q = new Queue();
-    let d = new Queue();
-    q.enqueue([inx, iny]);
-    d.enqueue(0);
-    used[inx][iny] = 1;
-    wave[inx][iny] = 0;
-    while(q.head != null){
-        let cur = q.dequeue();
-        let dist = d.dequeue();
-        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
-            used[cur[0] + 1][cur[1]] = 1;
-            wave[cur[0] + 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] + 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
-            used[cur[0] - 1][cur[1]] = 1;
-            wave[cur[0] - 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] - 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
-            used[cur[0]][cur[1] + 1] = 1;
-            wave[cur[0]][cur[1] + 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] + 1]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
-            used[cur[0]][cur[1] - 1] = 1;
-            wave[cur[0]][cur[1] - 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] - 1]);
-            d.enqueue(dist + 1);
-        }
-    }
-    if(used[pacx][pacy] == 0){
-        inkypath = [];
-        return;
-    }
-    inkypath = [];
-    inkypath.push([pacx, pacy]);
-    while(!(inx == pacx && iny == pacy)){
-        if((this.ok(pacx + 1, pacy)) && (wave[pacx + 1][pacy] + 1 == wave[pacx][pacy])){
-            pacx++;
-        }
-        else if(this.ok(pacx - 1, pacy) && wave[pacx - 1][pacy] + 1 == wave[pacx][pacy]){
-            pacx--;
-        }
-        else if(this.ok(pacx, pacy + 1) && wave[pacx][pacy + 1] + 1 == wave[pacx][pacy]){
-            pacy++;
-        }
-        else if(this.ok(pacx, pacy - 1) && wave[pacx][pacy - 1] + 1 == wave[pacx][pacy]){
-            pacy--;
-        }
-        inkypath.push([pacx, pacy]);
-    }
+   
+    inkypath = this.getpath(inx, iny, pacx, pacy);
   }
   pinky_update(){
     let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
@@ -388,79 +327,7 @@ class Game extends Phaser.Scene {
             }
         }
     }
-    if(mapq[piny][pinx] == 1){
-        pinkypath = [];
-        return;
-    }
-    let used = new Array(100);
-    for (let i = 0; i < used.length; i++) {
-        used[i] = new Array(100);
-        for (let j = 0; j < used[i].length; j++) {
-            used[i][j] = 0;
-        }
-    }
-    let wave = new Array(100);
-    for (let i = 0; i < wave.length; i++) {
-        wave[i] = new Array(100);
-        for (let j = 0; j < wave[i].length; j++) {
-            wave[i][j] = 1000000000;
-        }
-    }
-    let q = new Queue();
-    let d = new Queue();
-    q.enqueue([pinx, piny]);
-    d.enqueue(0);
-    used[pinx][piny] = 1;
-    wave[pinx][piny] = 0;
-    while(q.head != null){
-        let cur = q.dequeue();
-        let dist = d.dequeue();
-        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
-            used[cur[0] + 1][cur[1]] = 1;
-            wave[cur[0] + 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] + 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
-            used[cur[0] - 1][cur[1]] = 1;
-            wave[cur[0] - 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] - 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
-            used[cur[0]][cur[1] + 1] = 1;
-            wave[cur[0]][cur[1] + 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] + 1]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
-            used[cur[0]][cur[1] - 1] = 1;
-            wave[cur[0]][cur[1] - 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] - 1]);
-            d.enqueue(dist + 1);
-        }
-    }
-    if(used[pacx][pacy] == 0){
-        pinkypath = [];
-        return;
-    }
-    pinkypath = [];
-    pinkypath.push([pacx, pacy]);
-    while(!(pinx == pacx && piny == pacy)){
-        if((this.ok(pacx + 1, pacy)) && (wave[pacx + 1][pacy] + 1 == wave[pacx][pacy])){
-            pacx++;
-        }
-        else if(this.ok(pacx - 1, pacy) && wave[pacx - 1][pacy] + 1 == wave[pacx][pacy]){
-            pacx--;
-        }
-        else if(this.ok(pacx, pacy + 1) && wave[pacx][pacy + 1] + 1 == wave[pacx][pacy]){
-            pacy++;
-        }
-        else if(this.ok(pacx, pacy - 1) && wave[pacx][pacy - 1] + 1 == wave[pacx][pacy]){
-            pacy--;
-        }
-        pinkypath.push([pacx, pacy]);
-    }
+    pinkypath = this.getpath(pinx, piny, pacx, pacy);
   }
   blinky_update() {
     let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
@@ -479,79 +346,7 @@ class Game extends Phaser.Scene {
         pacy = scatter_blinkypath[0][1];
         pacx = scatter_blinkypath[0][0];
     }
-    if(mapq[bliy][blix] == 1){
-        blinkypath = [];
-        return;
-    }
-    let used = new Array(100);
-    for (let i = 0; i < used.length; i++) {
-        used[i] = new Array(100);
-        for (let j = 0; j < used[i].length; j++) {
-            used[i][j] = 0;
-        }
-    }
-    let wave = new Array(100);
-    for (let i = 0; i < wave.length; i++) {
-        wave[i] = new Array(100);
-        for (let j = 0; j < wave[i].length; j++) {
-            wave[i][j] = 1000000000;
-        }
-    }
-    let q = new Queue();
-    let d = new Queue();
-    q.enqueue([blix, bliy]);
-    d.enqueue(0);
-    used[blix][bliy] = 1;
-    wave[blix][bliy] = 0;
-    while(q.head != null){
-        let cur = q.dequeue();
-        let dist = d.dequeue();
-        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
-            used[cur[0] + 1][cur[1]] = 1;
-            wave[cur[0] + 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] + 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
-            used[cur[0] - 1][cur[1]] = 1;
-            wave[cur[0] - 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] - 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
-            used[cur[0]][cur[1] + 1] = 1;
-            wave[cur[0]][cur[1] + 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] + 1]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
-            used[cur[0]][cur[1] - 1] = 1;
-            wave[cur[0]][cur[1] - 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] - 1]);
-            d.enqueue(dist + 1);
-        }
-    }
-    if(used[pacx][pacy] == 0){
-      blinkypath = [];
-      return;
-    }
-    blinkypath = [];
-    blinkypath.push([pacx, pacy]);
-    while(!(blix == pacx && bliy == pacy)){
-        if((this.ok(pacx + 1, pacy)) && (wave[pacx + 1][pacy] + 1 == wave[pacx][pacy])){
-            pacx++;
-        }
-        else if(this.ok(pacx - 1, pacy) && wave[pacx - 1][pacy] + 1 == wave[pacx][pacy]){
-            pacx--;
-        }
-        else if(this.ok(pacx, pacy + 1) && wave[pacx][pacy + 1] + 1 == wave[pacx][pacy]){
-            pacy++;
-        }
-        else if(this.ok(pacx, pacy - 1) && wave[pacx][pacy - 1] + 1 == wave[pacx][pacy]){
-            pacy--;
-        }
-        blinkypath.push([pacx, pacy]);
-    }
+    blinkypath = this.getpath(blix, bliy, pacx, pacy);
   }
   clyde_update(){
     let pacy = Math.round((pacman.x - pacsize / 2) / tilesize);
@@ -593,75 +388,7 @@ class Game extends Phaser.Scene {
         clydedirection = 1;
         if(Date.now() - clydetime >= clydetimeswap) clydetime = Date.now();
     }
-    let used = new Array(100);
-    for (let i = 0; i < used.length; i++) {
-        used[i] = new Array(100);
-        for (let j = 0; j < used[i].length; j++) {
-            used[i][j] = 0;
-        }
-    }
-    let wave = new Array(100);
-    for (let i = 0; i < wave.length; i++) {
-        wave[i] = new Array(100);
-        for (let j = 0; j < wave[i].length; j++) {
-            wave[i][j] = 1000000000;
-        }
-    }
-    let q = new Queue();
-    let d = new Queue();
-    q.enqueue([clyx, clyy]);
-    d.enqueue(0);
-    used[clyx][clyy] = 1;
-    wave[clyx][clyy] = 0;
-    while(q.head != null){
-        let cur = q.dequeue();
-        let dist = d.dequeue();
-        if(this.ok(cur[0] + 1, cur[1]) && (used[cur[0] + 1][cur[1]] == 0)){
-            used[cur[0] + 1][cur[1]] = 1;
-            wave[cur[0] + 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] + 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0] - 1, cur[1]) && (used[cur[0] - 1][cur[1]] == 0)){
-            used[cur[0] - 1][cur[1]] = 1;
-            wave[cur[0] - 1][cur[1]] = dist + 1;
-            q.enqueue([cur[0] - 1, cur[1]]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] + 1) && (used[cur[0]][cur[1] + 1] == 0)){
-            used[cur[0]][cur[1] + 1] = 1;
-            wave[cur[0]][cur[1] + 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] + 1]);
-            d.enqueue(dist + 1);
-        }
-        if(this.ok(cur[0], cur[1] - 1) && (used[cur[0]][cur[1] - 1] == 0)){
-            used[cur[0]][cur[1] - 1] = 1;
-            wave[cur[0]][cur[1] - 1] = dist + 1;
-            q.enqueue([cur[0], cur[1] - 1]);
-            d.enqueue(dist + 1);
-        }
-    }
-    if(used[pacx][pacy] == 0){
-        clydepath = [];
-        return;
-    }
-    clydepath = [];
-    clydepath.push([pacx, pacy]);
-    while(!(clyx == pacx && clyy == pacy)){
-        if((this.ok(pacx + 1, pacy)) && (wave[pacx + 1][pacy] + 1 == wave[pacx][pacy])){
-            pacx++;
-        }
-        else if(this.ok(pacx - 1, pacy) && wave[pacx - 1][pacy] + 1 == wave[pacx][pacy]){
-            pacx--;
-        }
-        else if(this.ok(pacx, pacy + 1) && wave[pacx][pacy + 1] + 1 == wave[pacx][pacy]){
-            pacy++;
-        }
-        else if(this.ok(pacx, pacy - 1) && wave[pacx][pacy - 1] + 1 == wave[pacx][pacy]){
-            pacy--;
-        }
-        clydepath.push([pacx, pacy]);
-    };
+    clydepath = this.getpath(clyx, clyy, pacx, pacy);
   }
   preload() {
     this.load.atlas("pacman", "JS/images/pacman2.png", "JS/entities/pacman/pacman.json");
@@ -945,6 +672,10 @@ class Game extends Phaser.Scene {
     clydetime = Date.now();
     clydedirection = 0;
     scatter = false;
+    spawn.blinky = true;
+    spawn.pinky = true;
+    spawn.inky = true;
+    spawn.clyde = true;
   }
   update() {
     if (this.keys_arrows.up.isDown || this.keys_wasd.up.isDown) {
@@ -1166,6 +897,24 @@ class Game extends Phaser.Scene {
             if(blinky.anims.currentAnim.key != "blinkydown") blinky.play("blinkydown");
         }
     }
+    else{
+        if((blinky.x - tilesize / 2) % tilesize !== 0){
+            if((blinky.x - tilesize / 2) % tilesize < tilesize / 2){
+                blinky.x -= blinky_speed;
+            }
+            else{
+                blinky.x += blinky_speed;
+            }
+        }
+        else if((blinky.y - tilesize / 2) % tilesize !== 0){
+            if((blinky.y - tilesize / 2) % tilesize < tilesize / 2){
+                blinky.y -= blinky_speed;
+            }
+            else{
+                blinky.y += blinky_speed;
+            }
+        }
+    }
     pinky.setDepth(3);
     if(pinkymove){
         this.pinky_update();
@@ -1202,6 +951,24 @@ class Game extends Phaser.Scene {
         else{
             pinky.y+=pinky_speed;
             if(pinky.anims.currentAnim.key != "pinkydown") pinky.play("pinkydown");
+        }
+    }
+    else{
+        if((pinky.x - tilesize / 2) % tilesize !== 0){
+            if((pinky.x - tilesize / 2) % tilesize < tilesize / 2){
+                pinky.x -= pinky_speed;
+            }
+            else{
+                pinky.x += pinky_speed;
+            }
+        }
+        else if((pinky.y - tilesize / 2) % tilesize !== 0){
+            if((pinky.y - tilesize / 2) % tilesize < tilesize / 2){
+                pinky.y -= pinky_speed;
+            }
+            else{
+                pinky.y += pinky_speed;
+            }
         }
     }
     inky.setDepth(4);
@@ -1242,6 +1009,24 @@ class Game extends Phaser.Scene {
             if(inky.anims.currentAnim.key != "inkydown") inky.play("inkydown");
         }
     }
+    else{
+        if((inky.x - tilesize / 2) % tilesize !== 0){
+            if((inky.x - tilesize / 2) % tilesize < tilesize / 2){
+                inky.x -= inky_speed;
+            }
+            else{
+                inky.x += inky_speed;
+            }
+        }
+        else if((inky.y - tilesize / 2) % tilesize !== 0){
+            if((inky.y - tilesize / 2) % tilesize < tilesize / 2){
+                inky.y -= inky_speed;
+            }
+            else{
+                inky.y += inky_speed;
+            }
+        }
+    }
     clyde.setDepth(5);
     if(clydemove){
         this.clyde_update();
@@ -1278,6 +1063,24 @@ class Game extends Phaser.Scene {
         else{
             clyde.y+=clyde_speed;
             if(clyde.anims.currentAnim.key != "clydedown") clyde.play("clydedown");
+        }
+    }
+    else{
+        if((clyde.x - tilesize / 2) % tilesize !== 0){
+            if((clyde.x - tilesize / 2) % tilesize < tilesize / 2){
+                clyde.x -= clyde_speed;
+            }
+            else{
+                clyde.x += clyde_speed;
+            }
+        }
+        else if((clyde.y - tilesize / 2) % tilesize !== 0){
+            if((clyde.y - tilesize / 2) % tilesize < tilesize / 2){
+                clyde.y -= clyde_speed;
+            }
+            else{
+                clyde.y += clyde_speed;
+            }
         }
     }
     prevx = pacman.x;
